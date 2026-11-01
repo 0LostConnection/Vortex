@@ -197,6 +197,7 @@ import gatherDependencies, {
 import filterModInfo from "./util/filterModInfo";
 import { findModByRef } from "./util/findModByRef";
 import { toPosixSeparators } from "./util/installerHelpers";
+import { repairWindowsSeparators } from "./util/repairWindowsSeparators";
 import { InstallPhaseTracker, type IDeploymentDetails } from "./util/InstallPhaseTracker";
 import { isFuzzyVersion } from "./util/isFuzzyVersion";
 import metaLookupMatch from "./util/metaLookupMatch";
@@ -259,6 +260,17 @@ class InstructionGroups {
 }
 
 async function buildFileList(basePath: string): Promise<string[]> {
+  // 7-Zip on Linux writes Windows archive entries such as `Azar\file.lua`
+  // as a single filename. Turn those into real directories before installers
+  // see the list. `toPosixSeparators` only rewrites instruction strings, so
+  // it cannot find a file that is still stored under the literal name.
+  if (process.platform !== "win32") {
+    const { skipped } = await repairWindowsSeparators(basePath);
+    for (const entry of skipped) {
+      log("warn", "left extracted windows path unchanged", entry);
+    }
+  }
+
   const fileList: string[] = [];
   await walk(basePath, (iterPath, stats) => {
     const relPath = path.normalize(path.relative(basePath, iterPath));

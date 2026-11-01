@@ -35,7 +35,9 @@ function prepareForModding(discovery) {
 }
 
 function gameExecutable() {
-  return "system/witcher.exe";
+  // Steam ships this as System/witcher.exe. verifyGamePath stats the path
+  // as written, so the lowercase form is not found on a case-sensitive filesystem.
+  return "System/witcher.exe";
 }
 
 function main(context) {
